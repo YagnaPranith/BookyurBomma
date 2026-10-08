@@ -34,6 +34,8 @@ services:
       redis: { condition: service_healthy }
   web:
     build: ./frontend
+    environment:
+      BACKEND_HOSTPORT: api:8080
     ports: ["5173:80"]
     depends_on: [api]
 volumes:

@@ -1,0 +1,68 @@
+databases:
+  - name: book-your-bomma-db
+    databaseName: seatsync
+    user: seatsync
+    plan: free
+    region: singapore
+    postgresMajorVersion: "16"
+
+services:
+  - type: keyvalue
+    name: book-your-bomma-redis
+    plan: free
+    region: singapore
+    maxmemoryPolicy: noeviction
+
+  - type: web
+    name: book-your-bomma-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: DB_HOST
+        fromDatabase:
+          name: book-your-bomma-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: book-your-bomma-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: book-your-bomma-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: book-your-bomma-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: book-your-bomma-db
+          property: password
+      - key: SPRING_DATA_REDIS_URL
+        fromService:
+          name: book-your-bomma-redis
+          type: keyvalue
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+
+  - type: web
+    name: book-your-bomma
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    healthCheckPath: /
+    envVars:
+      - key: BACKEND_HOSTPORT
+        fromService:
+          name: book-your-bomma-api
+          type: web
+          property: hostport
